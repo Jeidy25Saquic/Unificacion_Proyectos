@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RegEx Validator - Interfaz Web</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2E86C1 0%, #F39C12 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 253, 247, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2C3E50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .input-section, .output-section {
+            background: #FDF6E3;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(46, 134, 193, 0.1);
+            border: 1px solid rgba(243, 156, 18, 0.2);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2C3E50;
+            font-size: 1.1em;
+        }
+
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #F8E6A0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            font-family: 'Courier New', monospace;
+            background: #FFFEF7;
+        }
+
+        input[type="text"]:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #2E86C1;
+            box-shadow: 0 0 0 3px rgba(46, 134, 193, 0.1);
+            transform: translateY(-2px);
+        }
+
+        textarea {
+            min-height: 200px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #F39C12, #E67E22);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(243, 156, 18, 0.4);
+            background: linear-gradient(45deg, #E67E22, #D35400);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
+
+        .predefined-rules {
+            margin-bottom: 25px;
+        }
+
+        .rules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 2px solid #F8E6A0;
+            border-radius: 10px;
+            padding: 15px;
+            background: #FFFEF7;
+        }
+
+        .rule-item {
+            padding: 8px 12px;
+            background: #FDF6E3;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .rule-item:hover {
+            background: #E8F4FD;
+            border-color: #2E86C1;
+            transform: translateY(-2px);
+        }
+
+        .rule-name {
+            font-weight: 600;
+            color: #2C3E50;
+            font-size: 0.9em;
+        }
+
+        .rule-pattern {
+            font-family: 'Courier New', monospace;
+            color: #7F8C8D;
+            font-size: 0.8em;
+            margin: 2px 0;
+        }
+
+        .rule-desc {
+            color: #95A5A6;
+            font-size: 0.75em;
+        }
+
+        .result-section {
+            margin-top: 25px;
+        }
+
+        .highlighted-text {
+            background: #FFFEF7;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #F8E6A0;
+            min-height: 200px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+            box-shadow: inset 0 2px 5px rgba(243, 156, 18, 0.1);
+        }
+
+        .highlighted-text mark {
+            background: #F39C12;
+            color: white;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .matches-list {
+            background: #FFFEF7;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #F8E6A0;
+            margin-top: 15px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .match-item {
+            display: inline-block;
+            background: #E8F4FD;
+            color: #2E86C1;
+            padding: 4px 8px;
+            margin: 2px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(46, 134, 193, 0.2);
+        }
+
+        .error {
+            color: #E74C3C;
+            background: #FADBD8;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #E74C3C;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+
+        .success {
+            color: #27AE60;
+            background: #D5EDDA;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #27AE60;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: #FFFEF7;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(46, 134, 193, 0.1);
+            border: 2px solid #F8E6A0;
+        }
+
+        .stat-number {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #F39C12;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #7F8C8D;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #2E86C1;
+            font-style: italic;
+        }
+
+        .spinner {
+            border: 3px solid #F8E6A0;
+            border-top: 3px solid #2E86C1;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Validador de Expresiones Regulares</h1>
+        
+        <div class="main-content">
+            <!-- Sección de entrada -->
+            <div class="input-section">
+                <h2>Configuración</h2>
+                
+                <div class="predefined-rules">
+                    <label>Reglas Predefinidas:</label>
+                    <div class="rules-grid" id="rulesContainer">
+                        <!-- Se llenará con JavaScript -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="regex">Expresión Regular:</label>
+                    <input type="text" id="regex" placeholder="Ingresa tu expresión regular..." autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label for="texto">Texto a Analizar (mínimo 5 líneas):</label>
+                    <textarea id="texto" placeholder="Ingresa el texto aquí...&#10;Línea 1&#10;Línea 2&#10;Línea 3&#10;Línea 4&#10;Línea 5"></textarea>
+                </div>
+
+                <button class="btn" onclick="procesarRegex()">Procesar</button>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    Procesando...
+                </div>
+            </div>
+
+            <!-- Sección de salida -->
+            <div class="output-section">
+                <h2>Resultados</h2>
+                
+                <div id="messages"></div>
+                
+                <div class="stats" id="stats" style="display: none;">
+                    <div class="stat-card">
+                        <span class="stat-number" id="totalMatches">0</span>
+                        <div class="stat-label">Coincidencias</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="totalLines">0</span>
+                        <div class="stat-label">Líneas</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number" id="totalChars">0</span>
+                        <div class="stat-label">Caracteres</div>
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <label>Texto con coincidencias resaltadas:</label>
+                    <div class="highlighted-text" id="textoResaltado">
+                        Los resultados aparecerán aquí después de procesar...
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <label>Lista de coincidencias encontradas:</label>
+                    <div class="matches-list" id="listaCoincidencias">
+                        Las coincidencias aparecerán aquí...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cargar reglas predefinidas
+        async function cargarReglas() {
+            try {
+                // Las reglas se obtienen del template Jinja2
+                const reglas = window.reglasData || [];
+                const container = document.getElementById('rulesContainer');
+                
+                reglas.forEach(regla => {
+                    const div = document.createElement('div');
+                    div.className = 'rule-item';
+                    div.onclick = () => selectRule(regla.pattern);
+                    div.innerHTML = `
+                        <div class="rule-name">${regla.name}</div>
+                        <div class="rule-pattern">${regla.pattern}</div>
+                        <div class="rule-desc">${regla.description}</div>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (error) {
+                console.error('Error cargando reglas:', error);
+            }
+        }
+
+        function selectRule(pattern) {
+            document.getElementById('regex').value = pattern;
+        }
+
+        async function procesarRegex() {
+            const regex = document.getElementById('regex').value;
+            const texto = document.getElementById('texto').value;
+            const loadingEl = document.getElementById('loading');
+            const messagesEl = document.getElementById('messages');
+            
+            if (!regex.trim()) {
+                showMessage('Por favor ingresa una expresión regular.', 'error');
+                return;
+            }
+            
+            if (!texto.trim()) {
+                showMessage('Por favor ingresa el texto a analizar.', 'error');
+                return;
+            }
+
+            loadingEl.style.display = 'block';
+            messagesEl.innerHTML = '';
+
+            try {
+                const response = await fetch('/procesar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        regex: regex,
+                        texto: texto
+                    })
+                });
+
+                const data = await response.json();
+                loadingEl.style.display = 'none';
+
+                if (!data.valid) {
+                    showMessage(data.error, 'error');
+                    hideResults();
+                    return;
+                }
+
+                showMessage(`Procesamiento completado. Se encontraron ${data.total_coincidencias} coincidencias.`, 'success');
+                updateStats(data.total_coincidencias, texto.split('\n').length, texto.length);
+                document.getElementById('textoResaltado').innerHTML = data.texto_resaltado || 'Sin coincidencias';
+                
+                const listaEl = document.getElementById('listaCoincidencias');
+                if (data.coincidencias.length > 0) {
+                    listaEl.innerHTML = data.coincidencias.map(match => 
+                        `<span class="match-item">${escapeHtml(match)}</span>`
+                    ).join('');
+                } else {
+                    listaEl.innerHTML = '<em style="color: #666;">No se encontraron coincidencias</em>';
+                }
+
+                document.getElementById('stats').style.display = 'grid';
+
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                showMessage('Error de conexión. Intenta nuevamente.', 'error');
+                console.error('Error:', error);
+            }
+        }
+
+        function showMessage(message, type) {
+            const messagesEl = document.getElementById('messages');
+            messagesEl.innerHTML = `<div class="${type}">${message}</div>`;
+        }
+
+        function hideResults() {
+            document.getElementById('stats').style.display = 'none';
+            document.getElementById('textoResaltado').innerHTML = 'Los resultados aparecerán aquí después de procesar...';
+            document.getElementById('listaCoincidencias').innerHTML = 'Las coincidencias aparecerán aquí...';
+        }
+
+        function updateStats(matches, lines, chars) {
+            document.getElementById('totalMatches').textContent = matches;
+            document.getElementById('totalLines').textContent = lines;
+            document.getElementById('totalChars').textContent = chars;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        document.getElementById('regex').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                procesarRegex();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('texto').value = `Este es un texto de ejemplo para probar
+las expresiones regulares con múltiples líneas
+Línea número 3 con algunos números 123
+Cuarta línea con más contenido y palabras
+Quinta línea final del ejemplo de prueba`;
+            cargarReglas();
+        });
+    </script>
+</body>
+</html>

@@ -207,20 +207,26 @@ def procesar_regex():
     es_valida, error = validar_regex(patron)
     
     if not es_valida:
-        return jsonify({'valid': False, 'error': f'Error en la expresión regular: {error}'}), 400
+        return jsonify({'valid': False, 'error': f'Error en la expresión regular: {error}'})
     
     lineas = texto.split('\n')
     if len(lineas) < 5:
-        return jsonify({'valid': False, 'error': 'El texto debe tener al menos 5 líneas.'}), 400
+        return jsonify({'valid': False, 'error': 'El texto debe tener al menos 5 líneas.'})
     
     coincidencias, total = resaltar_coincidencias(texto, patron)
     
     # Resaltar en el texto
     texto_resaltado = texto
+    offset = 0
     try:
         for match in re.finditer(patron, texto, re.MULTILINE):
             inicio, fin = match.span()
-            texto_resaltado = texto_resaltado[:inicio] + '<mark>' + texto_resaltado[inicio:fin] + '</mark>' + texto_resaltado[fin:]
+            texto_resaltado = (
+                texto_resaltado[:inicio + offset] +
+                "<mark>" + texto_resaltado[inicio + offset:fin + offset] + "</mark>" +
+                texto_resaltado[fin + offset:]
+            )
+            offset += 13  # longitud de <mark></mark>
     except:
         pass
     
@@ -230,13 +236,6 @@ def procesar_regex():
         'coincidencias': coincidencias,
         'total_coincidencias': total
     })
-
-@app.route('/get-rule/<rule_name>')
-def get_rule(rule_name):
-    patron = RegexRules.get_rule(rule_name)
-    if patron:
-        return jsonify({'pattern': patron})
-    return jsonify({'error': 'Regla no encontrada'}), 404
 
 # ---- PROYECTO 4: RUTAS Y AUTÓMATAS ----
 @app.route('/rutas-automatas')
