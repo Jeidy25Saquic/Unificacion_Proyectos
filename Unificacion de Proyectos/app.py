@@ -1,3 +1,5 @@
+import itertools
+
 from flask import Flask, render_template, request, jsonify
 import re
 from itertools import product
@@ -8,6 +10,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import networkx as nx
 from io import BytesIO
+from tree import ExpressionTree
 import base64
 import warnings
 warnings.filterwarnings('ignore')
@@ -15,36 +18,95 @@ warnings.filterwarnings('ignore')
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 
 # ============ PROYECTO 1: TABLAS DE VERDAD ============
+class TruthTableGenerator:
+    def __init__(self):
+        self.history_stack = []
 
-def generar_tabla_verdad(expresion):
-    """Genera tabla de verdad para una expresión booleana"""
-    expresion = expresion.strip()
-    variables = sorted(set(c for c in expresion if c.isalpha()))
-    
-    if not variables:
-        return {'error': 'No se encontraron variables'}, None
-    
-    tabla = []
-    for valores in product([0, 1], repeat=len(variables)):
-        contexto = dict(zip(variables, valores))
+    def detect_variables(self, expression):
+        variables = set()
+        valid_vars = set('pqrstuvwxy')
+        for char in expression:
+            if char in valid_vars:
+                variables.add(char)
+        return variables
+
+    def generate_truth_table(self, expression):
+        expr = expression.strip()
+        if not expr:
+            return {"error": "Por favor ingrese una expresión lógica."}
+
+        variables = self.detect_variables(expr)
+        if not variables:
+            return {"error": "No se detectaron variables en la expresión."}
+
+        if len(variables) > 10:
+            return {"error": "Máximo 10 variables permitidas."}
+
         try:
-            expr_eval = expresion
-            for var, val in contexto.items():
-                expr_eval = expr_eval.replace(var, str(val))
-            
-            expr_eval = expr_eval.replace('&', ' and ').replace('|', ' or ').replace('~', 'not ')
-            resultado = eval(expr_eval)
-            
-            fila = list(valores) + [1 if resultado else 0]
-            tabla.append(fila)
-        except:
-            return {'error': 'Expresión inválida'}, None
-    
-    return {
-        'variables': variables,
-        'tabla': tabla,
-        'expresion': expresion
-    }, None
+            tree = ExpressionTree(expr)
+            tree.build_tree()
+
+            detected_vars = sorted(variables)
+            tree_vars = sorted(tree.variables)
+
+            if detected_vars != tree_vars:
+                return {"warning": f"Variables detectadas: {detected_vars}\nVariables en árbol: {tree_vars}"}
+
+            var_list = sorted(tree.variables)
+            combinations = list(itertools.product([False, True], repeat=len(var_list)))
+
+            table_data = []
+            for combination in combinations:
+                var_dict = dict(zip(var_list, combination))
+                result = tree.evaluate(var_dict)
+
+                row_values = {}
+                for var in var_list:
+                    row_values[var] = 'V' if var_dict[var] else 'F'
+                row_values['result'] = 'V' if result else 'F'
+                table_data.append(row_values)
+
+            return {
+                "success": True,
+                "variables": var_list,
+                "table_data": table_data,
+                "num_rows": len(combinations),
+                "expression": tree.inorder_expression()
+            }
+
+        except Exception as e:
+            return {
+                "error": f"Error al generar la tabla de verdad:\n\n{str(e)}\n\nVerifique que la expresión esté bien formada.\nEjemplo válido: [ p ∧ q ∨ ¬r ]"
+            }
+
+
+generator = TruthTableGenerator()
+
+
+@app.route('/tablas-verdad')
+def tablas_verdad_html():
+    return render_template('tablas_verdad.html')
+
+
+@app.route('/generate_table', methods=['POST'])
+def generate_table():
+    expression = request.json.get('expression', '')
+    result = generator.generate_truth_table(expression)
+    return jsonify(result)
+
+
+@app.route('/detect_variables', methods=['POST'])
+def detect_variables():
+    expression = request.json.get('expression', '')
+    variables = generator.detect_variables(expression)
+    num_vars = len(variables)
+    num_rows = 2 ** num_vars if num_vars > 0 else 0
+
+    return jsonify({
+        'variables': list(sorted(variables)),
+        'num_vars': num_vars,
+        'num_rows': num_rows
+    })
 
 # ============ PROYECTO 2: SIMPLIFICACIÓN BOOLEANA ============
 
@@ -392,20 +454,7 @@ def index():
     return render_template('index.html')
 
 # ---- PROYECTO 1 ----
-@app.route('/tablas-verdad')
-def tablas_verdad():
-    return render_template('tablas_verdad.html')
 
-@app.route('/api/generar-tabla', methods=['POST'])
-def api_generar_tabla():
-    data = request.get_json()
-    expresion = data.get('expresion', '')
-    resultado, error = generar_tabla_verdad(expresion)
-    
-    if error:
-        return jsonify({'error': error}), 400
-    
-    return jsonify(resultado)
 
 # ---- PROYECTO 2 ----
 @app.route('/simplificacion')
